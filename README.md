@@ -87,6 +87,7 @@ curl -X POST https://<deployed-url>/cards/validate \
 
 - **Luhn algorithm** for card number validation, implemented as a pure,
   unit-tested function.
+  To test, you can generate a vaid number from [RapidToolSet](https://rapidtoolset.com/en/tool/luhn-number-generator)
 - **Registry semantics**: the first successful validation persists the card
   number with the presented expiry/CVV and a generated name. Later requests
   for the same number must match the original expiry and CVV; mismatches are
