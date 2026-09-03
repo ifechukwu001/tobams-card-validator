@@ -1,6 +1,5 @@
 import { createClient } from '@libsql/client';
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import * as schema from './schema.js';
 
@@ -22,9 +21,9 @@ export class DatabaseService implements OnModuleDestroy {
 
   readonly db: Database;
 
-  constructor(config: ConfigService) {
-    const url = config.get<string>('DATABASE_URL') ?? 'file:./data/cards.db';
-    const authToken = config.get<string>('DATABASE_AUTH_TOKEN');
+  constructor() {
+    const url = process.env.DATABASE_URL ?? 'file:./data/cards.db';
+    const authToken = process.env.DATABASE_AUTH_TOKEN;
 
     this.client = createClient({ url, authToken });
     this.db = drizzle({ client: this.client, schema, casing: 'snake_case' });
