@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CardsModule } from './cards/cards.module.js';
-import { DatabaseModule } from './database/database.module.js';
+import { CardsModule } from './cards/cards.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [DatabaseModule, CardsModule],

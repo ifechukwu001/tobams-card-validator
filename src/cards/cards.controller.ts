@@ -8,8 +8,8 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { CardsService, type CardValidationData } from './cards.service.js';
-import { ValidateCardDto } from './validate-card.dto.js';
+import { CardsService, type CardValidationData } from './cards.service';
+import { ValidateCardDto } from './validate-card.dto';
 
 /**
  * Malformed or missing input is rejected with 422 (unprocessable entity)

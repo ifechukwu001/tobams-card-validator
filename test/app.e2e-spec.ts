@@ -3,10 +3,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { migrate } from 'drizzle-orm/libsql/migrator';
-import { AppModule } from './../src/app.module.js';
-import { EnvelopeExceptionFilter } from './../src/common/envelope-exception.filter.js';
-import { ResponseInterceptor } from './../src/common/response.interceptor.js';
-import { DatabaseService } from './../src/database/database.service.js';
+import { AppModule } from './../src/app.module';
+import { EnvelopeExceptionFilter } from './../src/common/envelope-exception.filter';
+import { ResponseInterceptor } from './../src/common/response.interceptor';
+import { DatabaseService } from './../src/database/database.service';
 
 const VALID_CARD = {
   cardNumber: '4111111111111111',
@@ -28,12 +28,10 @@ describe('POST /cards/validate (e2e)', () => {
     app.useGlobalInterceptors(new ResponseInterceptor());
     app.useGlobalFilters(new EnvelopeExceptionFilter());
 
-    // Ephemeral in-memory database — apply the committed migrations instead
-    // of going through the `db:migrate` CLI script.
+    await app.init();
+
     const database = moduleFixture.get(DatabaseService);
     await migrate(database.db, { migrationsFolder: './drizzle' });
-
-    await app.init();
   });
 
   afterAll(async () => {

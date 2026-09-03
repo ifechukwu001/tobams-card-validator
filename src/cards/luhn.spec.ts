@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidCardNumber } from './luhn.js';
+import { isValidCardNumber } from './luhn';
 
 describe('isValidCardNumber', () => {
   it.each([

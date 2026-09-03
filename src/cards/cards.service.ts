@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { DatabaseService } from '../database/database.service.js';
-import { cards } from '../database/schema.js';
-import { isValidCardNumber } from './luhn.js';
-import type { ValidateCardDto } from './validate-card.dto.js';
+import { DatabaseService } from '../database/database.service';
+import { cards } from '../database/schema';
+import { isValidCardNumber } from './luhn';
+import type { ValidateCardDto } from './validate-card.dto';
 
 export interface CardValidationData {
   cardholderName: string;

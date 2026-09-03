@@ -1,10 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { migrate } from 'drizzle-orm/libsql/migrator';
-import { DatabaseService } from '../database/database.service.js';
-import { CardsService } from './cards.service.js';
-import type { ValidateCardDto } from './validate-card.dto.js';
+import { DatabaseService } from '../database/database.service';
+import { CardsService } from './cards.service';
+import type { ValidateCardDto } from './validate-card.dto';
 
 const VALID_CARD: ValidateCardDto = {
   cardNumber: '4111111111111111',
@@ -17,30 +16,22 @@ describe('CardsService', () => {
   let db: DatabaseService;
 
   beforeEach(async () => {
+    process.env.DATABASE_URL = 'file::memory:';
+
     const module = await Test.createTestingModule({
-      providers: [
-        CardsService,
-        DatabaseService,
-        {
-          provide: ConfigService,
-          useValue: {
-            get: (key: string) =>
-              key === 'DATABASE_URL' ? 'file::memory:' : undefined,
-          },
-        },
-      ],
+      providers: [CardsService, DatabaseService],
     }).compile();
 
     service = module.get(CardsService);
     db = module.get(DatabaseService);
 
-    // Tests run against an ephemeral in-memory database, so migrations are
-    // applied here instead of through the `db:migrate` CLI script.
+    await db.onModuleInit();
     await migrate(db.db, { migrationsFolder: './drizzle' });
   });
 
   afterEach(() => {
     db.onModuleDestroy();
+    delete process.env.DATABASE_URL;
   });
 
   it('validates a correct card and returns a generated cardholder name', async () => {
@@ -59,9 +50,9 @@ describe('CardsService', () => {
   it('rejects a known card presented with a different cvv', async () => {
     await service.validate(VALID_CARD);
 
-    await expect(service.validate({ ...VALID_CARD, cvv: '999' })).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      service.validate({ ...VALID_CARD, cvv: '999' }),
+    ).rejects.toThrow(BadRequestException);
     await expect(
       service.validate({ ...VALID_CARD, cvv: '999' }),
     ).rejects.toThrow('Card details do not match this card');
@@ -86,8 +77,6 @@ describe('CardsService', () => {
       service.validate({ ...VALID_CARD, cardNumber: '4111111111111112' }),
     ).rejects.toThrow('Invalid card number');
 
-    // Fixing the last digit makes the number Luhn-valid; it must be treated
-    // as a brand-new card, i.e. validation succeeds with a generated name.
     const result = await service.validate({
       ...VALID_CARD,
       cardNumber: '4111111111111111',

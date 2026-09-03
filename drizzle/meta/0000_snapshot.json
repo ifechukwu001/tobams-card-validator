@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "ac959f74-92ad-4488-be16-94ce10f6b6ed",
+  "id": "6d90f46e-20de-4d0c-b3df-a9ba56d6a067",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "cards": {

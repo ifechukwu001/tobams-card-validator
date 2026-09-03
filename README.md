@@ -1,21 +1,21 @@
 # Card Number Validation API
 
 A NestJS + TypeScript API that validates card numbers using the Luhn algorithm.
-Cards that pass validation are registered in a libSQL/SQLite database (local
-file, local Turso server, or Turso Cloud) with a randomly generated cardholder
-name.
+Cards that pass validation are registered in a Turso/libSQL database with a
+randomly generated cardholder name.
 
 ## Running locally
 
 ```bash
 pnpm install
+node scripts/db-setup.js   # creates the local SQLite table
 pnpm start:dev
 ```
 
-The API is now listening on http://localhost:3000. By default it stores data
-in a local SQLite file at `./data/cards.db` — no setup required.
+The API listens on http://localhost:3000. Data is stored in `./data/cards.db`
+by default.
 
-To use a different database, copy `.env.example` to `.env` and set:
+To use a different database, set environment variables:
 
 ```bash
 # Local Turso server (turso dev --db-file local.db)
@@ -26,57 +26,67 @@ DATABASE_URL=libsql://<database>-<org>.turso.io
 DATABASE_AUTH_TOKEN=eyJ...
 ```
 
-Run the tests with:
+Run tests:
 
 ```bash
 pnpm test        # unit tests
 pnpm test:e2e    # end-to-end tests
 ```
 
+## Deploying to Vercel
+
+1. Create a [Turso Cloud](https://turso.tech) database and get the URL + auth token.
+2. Apply migrations locally against Turso:
+   ```bash
+   DATABASE_URL=libsql://<db>-<org>.turso.io DATABASE_AUTH_TOKEN=eyJ... pnpm db:migrate
+   ```
+3. Deploy to Vercel (no special config needed — Vercel auto-detects NestJS):
+   ```bash
+   vercel --prod
+   ```
+   Set `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in the Vercel project settings.
+
 ## Calling the deployed API
 
-`POST https://tobams-card-validator-indol.vercel.app/cards/validate`
+`POST https://<deployed-url>/cards/validate`
 
 ```bash
 # Valid card → 200
-curl -X POST https://tobams-card-validator-indol.vercel.app/cards/validate \
+curl -X POST https://<deployed-url>/cards/validate \
   -H 'Content-Type: application/json' \
   -d '{"cardNumber": "4111111111111111", "expiryDate": "12/30", "cvv": "123"}'
-# {"valid":true,"cardholderName":"Donald Allen"}
+# {"status":"success","message":"Card is valid","data":{"cardholderName":"Samuel Knuth"}}
 
-# Invalid card (Luhn failure / expired / mismatched details) → 200
-curl -X POST https://tobams-card-validator-indol.vercel.app/cards/validate \
+# Invalid card (Luhn failure) → 400
+curl -X POST https://<deployed-url>/cards/validate \
   -H 'Content-Type: application/json' \
   -d '{"cardNumber": "4111111111111112", "expiryDate": "12/30", "cvv": "123"}'
-# {"valid":false,"reason":"Invalid card number"}
+# {"status":"failed","message":"Invalid card number"}
 
-# Malformed request → 400
-curl -X POST https://tobams-card-validator-indol.vercel.app/cards/validate \
+# Card expired → 400
+curl -X POST https://<deployed-url>/cards/validate \
   -H 'Content-Type: application/json' \
-  -d '{"cardNumber": "4111 1111 1111 1111"}'
-# {"message":["cardNumber must contain only digits, no spaces or separators", ...], "statusCode":400}
+  -d '{"cardNumber": "4111111111111111", "expiryDate": "01/20", "cvv": "123"}'
+# {"status":"failed","message":"Card has expired"}
+
+# Card number with spaces → 422
+curl -X POST https://<deployed-url>/cards/validate \
+  -H 'Content-Type: application/json' \
+  -d '{"cardNumber": "4111 1111 1111 1111", "expiryDate": "12/30", "cvv": "123"}'
+# {"status":"failed","message":"cardNumber must contain only digits, no spaces or separators"}
 ```
-
-Notes:
-
-- `cardNumber` must be 13–19 digits with no spaces or separators.
-- `expiryDate` is `MM/YY`; any month in the future is valid.
-- `cvv` is any 3–4 digit value.
-- Repeating a validated card with the same expiry and CVV returns the same
-  cardholder name; a different expiry or CVV is rejected.
 
 ## Decisions
 
 - **Luhn algorithm** for card number validation, implemented as a pure,
   unit-tested function.
 - **Registry semantics**: the first successful validation persists the card
-  number together with the presented expiry date, CVV and a randomly
-  generated cardholder name. Later requests for the same number must present
-  the same expiry and CVV — otherwise the card is rejected — and always get
-  the originally generated name back.
-- **Turso/libSQL storage** via `@libsql/client`: the same code runs against a
-  local SQLite file, a local `turso dev` server, or Turso Cloud, selected
-  purely through `DATABASE_URL` / `DATABASE_AUTH_TOKEN`.
-- **HTTP semantics**: completed validations always return 200 (the outcome is
-  data, not an error) with user-friendly reasons; only malformed or missing
-  input returns 400.
+  number with the presented expiry/CVV and a generated name. Later requests
+  for the same number must match the original expiry and CVV; mismatches are
+  rejected, and matches return the cached name.
+- **Turso/libSQL storage** via `drizzle-orm` + `@libsql/client`: the same
+  code runs against a local SQLite file, a local `turso dev` server, or
+  Turso Cloud. Schema changes use `pnpm db:migrate`.
+- **Response envelope**: all responses follow `{ status, message, data? }`.
+  Business failures (Luhn, expired, mismatch) return 400; validation errors
+  (missing/bad fields) return 422.

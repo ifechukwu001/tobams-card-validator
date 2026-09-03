@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js';
-import { EnvelopeExceptionFilter } from './common/envelope-exception.filter.js';
-import { ResponseInterceptor } from './common/response.interceptor.js';
+import { AppModule } from './app.module';
+import { EnvelopeExceptionFilter } from './common/envelope-exception.filter';
+import { ResponseInterceptor } from './common/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -9,4 +9,4 @@ async function bootstrap() {
   app.useGlobalFilters(new EnvelopeExceptionFilter());
   await app.listen(process.env.PORT ?? 3000);
 }
-await bootstrap();
+bootstrap();
