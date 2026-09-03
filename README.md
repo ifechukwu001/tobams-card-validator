@@ -8,7 +8,6 @@ randomly generated cardholder name.
 
 ```bash
 pnpm install
-node scripts/db-setup.js   # creates the local SQLite table
 pnpm start:dev
 ```
 
@@ -45,6 +44,14 @@ pnpm test:e2e    # end-to-end tests
    vercel --prod
    ```
    Set `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in the Vercel project settings.
+
+## Status codes
+
+| Code | Meaning |
+|------|---------|
+| **200** | Validation completed — check `status` field for `"success"` or `"failed"` |
+| **400** | User error — card is invalid (bad Luhn, expired, details mismatch) |
+| **422** | Validation error — malformed or missing request fields |
 
 ## Calling the deployed API
 
