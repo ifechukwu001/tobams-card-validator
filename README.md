@@ -32,19 +32,6 @@ pnpm test        # unit tests
 pnpm test:e2e    # end-to-end tests
 ```
 
-## Deploying to Vercel
-
-1. Create a [Turso Cloud](https://turso.tech) database and get the URL + auth token.
-2. Apply migrations locally against Turso:
-   ```bash
-   DATABASE_URL=libsql://<db>-<org>.turso.io DATABASE_AUTH_TOKEN=eyJ... pnpm db:migrate
-   ```
-3. Deploy to Vercel (no special config needed — Vercel auto-detects NestJS):
-   ```bash
-   vercel --prod
-   ```
-   Set `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in the Vercel project settings.
-
 ## Status codes
 
 | Code | Meaning |
@@ -55,29 +42,29 @@ pnpm test:e2e    # end-to-end tests
 
 ## Calling the deployed API
 
-`POST https://<deployed-url>/cards/validate`
+`POST https://tobams-card-validator-indol.vercel.app/cards/validate`
 
 ```bash
 # Valid card → 200
-curl -X POST https://<deployed-url>/cards/validate \
+curl -X POST https://tobams-card-validator-indol.vercel.app/cards/validate \
   -H 'Content-Type: application/json' \
   -d '{"cardNumber": "4111111111111111", "expiryDate": "12/30", "cvv": "123"}'
 # {"status":"success","message":"Card is valid","data":{"cardholderName":"Samuel Knuth"}}
 
 # Invalid card (Luhn failure) → 400
-curl -X POST https://<deployed-url>/cards/validate \
+curl -X POST https://tobams-card-validator-indol.vercel.app/cards/validate \
   -H 'Content-Type: application/json' \
   -d '{"cardNumber": "4111111111111112", "expiryDate": "12/30", "cvv": "123"}'
 # {"status":"failed","message":"Invalid card number"}
 
 # Card expired → 400
-curl -X POST https://<deployed-url>/cards/validate \
+curl -X POST https://tobams-card-validator-indol.vercel.app/cards/validate \
   -H 'Content-Type: application/json' \
   -d '{"cardNumber": "4111111111111111", "expiryDate": "01/20", "cvv": "123"}'
 # {"status":"failed","message":"Card has expired"}
 
 # Card number with spaces → 422
-curl -X POST https://<deployed-url>/cards/validate \
+curl -X POST https://tobams-card-validator-indol.vercel.app/cards/validate \
   -H 'Content-Type: application/json' \
   -d '{"cardNumber": "4111 1111 1111 1111", "expiryDate": "12/30", "cvv": "123"}'
 # {"status":"failed","message":"cardNumber must contain only digits, no spaces or separators"}
